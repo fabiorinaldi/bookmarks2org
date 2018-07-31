@@ -38,9 +38,12 @@ def export_bookmarks(bookmarks, fp):
                                         bookmarks['uri'],
                                         bookmarks['title']))
 
+
     # Output the node according to its type and the current level
-    def print_bookmarks_container(bookmarks,level):
-         fp.write('%s %s\n' % ('*' * level, bookmarks['title']))
+    def print_bookmarks_container(bookmarks,level,title="bookmarks"):
+        if bookmarks['title'] != "":
+            title = bookmarks['title'] 
+        fp.write('%s %s\n' % ('*' * level, title))
 
 
     # The inner recursive function which does the main work
