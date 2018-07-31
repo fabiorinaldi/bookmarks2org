@@ -31,29 +31,35 @@ import json
 sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 
 def export_bookmarks(bookmarks, fp):
+
+    # Output the node according to its type and the current level
+    def print_bookmarks_place(bookmarks,level):
+        fp.write('%s - [[%s][%s]]\n' % (' ' * (level - 1),
+                                        bookmarks['uri'],
+                                        bookmarks['title']))
+
+    # Output the node according to its type and the current level
+    def print_bookmarks_container(bookmarks,level):
+         fp.write('%s %s\n' % ('*' * level, bookmarks['title']))
+
+
     # The inner recursive function which does the main work
     def export_bookmarks_impl(bookmarks, level):
-        # Output the node according to its type and the current level
-        if bookmarks['type'] == 'text/x-moz-place-container':
-            fp.write('%s %s\n' % ('*' * level, bookmarks['title']))
-        elif bookmarks['type'] == 'text/x-moz-place':
-            fp.write('%s - [[%s][%s]]\n' % (' ' * (level - 1),
-                                            bookmarks['uri'],
-                                            bookmarks['title']))
-
         if bookmarks.has_key('children'):
             # Due to the nature of org-mode format, it is important to
             # export not folder nodes first. So they are guaranteed to
             # be children of the current node.
             for child in bookmarks['children']:
                 if child['type'] == 'text/x-moz-place':
-                    export_bookmarks_impl(child, level + 1)
+                    print_bookmarks_place(child, level + 1)
 
             for child in bookmarks['children']:
                 if child['type'] == 'text/x-moz-place-container':
+                    print_bookmarks_container(child, level + 1)
                     export_bookmarks_impl(child, level + 1)
 
     # Starting the traversal from level 1
+    print_bookmarks_container(bookmarks, 1)
     export_bookmarks_impl(bookmarks, 1)
 
 if __name__ == '__main__':
