@@ -3,6 +3,11 @@
 
 # Copyright (c) 2014 Alexey Kutepov a.k.a. rexim
 
+# Modified by Fabio Rinaldi 2018, see explanation at:
+# https://github.com/fabiorinaldi/bookmarks2org
+
+# ------------------------------------------------------------
+
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files
 # (the "Software"), to deal in the Software without restriction,
@@ -83,7 +88,7 @@ def export_bookmarks(bookmarks, fp, matchtitle=None):
                         export_bookmarks_impl(child, level, matchtitle)                        
 
     if not matchtitle and TOPLEVEL>0:
-        print_bookmarks_container(bookmarks, TOPLEVEL+1)
+        print_bookmarks_container(bookmarks, TOPLEVEL)
 
     export_bookmarks_impl(bookmarks, TOPLEVEL, matchtitle)
 
