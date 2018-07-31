@@ -28,9 +28,16 @@ import locale
 import sys
 import json
 
+# Initial nestedness level
+# 0: to have the top level folders in the json file 
+#    become top level in org 
+# 1: to put the top level folders in the json file under a new 
+#    top level entry in the org file (original behavior)
+TOPLEVEL=1
+
 sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 
-def export_bookmarks(bookmarks, fp):
+def export_bookmarks(bookmarks, fp, matchtitle=None):
 
     # Output the node according to its type and the current level
     def print_bookmarks_place(bookmarks,level):
@@ -47,27 +54,53 @@ def export_bookmarks(bookmarks, fp):
 
 
     # The inner recursive function which does the main work
-    def export_bookmarks_impl(bookmarks, level):
+    def export_bookmarks_impl(bookmarks, level, matchtitle):
+        # matchtitle can have 2 values: 
+        #  None: no string required, print always, 
+        #  the string to be matched: don't print until matched
+
         if bookmarks.has_key('children'):
             # Due to the nature of org-mode format, it is important to
             # export not folder nodes first. So they are guaranteed to
             # be children of the current node.
-            for child in bookmarks['children']:
-                if child['type'] == 'text/x-moz-place':
-                    print_bookmarks_place(child, level + 1)
+
+            if not matchtitle:
+                # condition is true only when matchtitle is None
+                for child in bookmarks['children']:
+                    if child['type'] == 'text/x-moz-place':
+                        print_bookmarks_place(child, level + 1)
 
             for child in bookmarks['children']:
                 if child['type'] == 'text/x-moz-place-container':
-                    print_bookmarks_container(child, level + 1)
-                    export_bookmarks_impl(child, level + 1)
+                    if not matchtitle or child['title'] == matchtitle:
+                        print_bookmarks_container(child, level + 1)
+                        export_bookmarks_impl(child, level + 1, None)
 
-    # Starting the traversal from level 1
-    print_bookmarks_container(bookmarks, 1)
-    export_bookmarks_impl(bookmarks, 1)
+                    else:
+                        # matchtitle contains a string AND
+                        #   that string does not match matchtitle
+                        # recurse only
+                        export_bookmarks_impl(child, level, matchtitle)                        
+
+    if not matchtitle and TOPLEVEL>0:
+        print_bookmarks_container(bookmarks, TOPLEVEL+1)
+
+    export_bookmarks_impl(bookmarks, TOPLEVEL, matchtitle)
 
 if __name__ == '__main__':
     # Reading JSON from stdin
     bookmarks = json.load(sys.stdin)
 
-    # Writing org-mode to stdout
-    export_bookmarks(bookmarks, sys.stdout)
+    args=sys.argv[1:]
+
+    if len(args) == 0:
+        export_bookmarks(bookmarks, sys.stdout, None)
+
+    else:
+        while len(args) > 0:
+
+            # Writing org-mode to stdout, starting at the bookmark identified by the argument
+            export_bookmarks(bookmarks, sys.stdout, args[0])
+
+            args = args[1:]
+
